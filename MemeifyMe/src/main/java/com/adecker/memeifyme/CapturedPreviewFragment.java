@@ -2,15 +2,11 @@ package com.adecker.memeifyme;
 
 import android.app.Fragment;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
-import android.graphics.Rect;
+import android.graphics.*;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.text.StaticLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,11 +14,13 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Random;
 
 /**
  * Created by alex on 11/16/13.
@@ -30,10 +28,14 @@ import java.util.Date;
 public class CapturedPreviewFragment extends Fragment {
 
 
+	private String[] text = {"Wow", "What r\nyou doing", "so scare", "Concern", "plz no", "nevr scratch again"};
 	private Rect faceRect;
-	private ArrayList<StaticLayout> blurbs = new ArrayList<StaticLayout>();
+	private ArrayList<TextView> blurbs = new ArrayList<TextView>();
 	private Bitmap bm;
-	private TextPreviewOverlay mOverlay;
+	private TextDragLayout mTextOverlay;
+	private MemeOverlay mMemeOverlay;
+	private FrameLayout mOverlayFrame;
+	private ImageView mImageView;
 
 	public CapturedPreviewFragment(Bitmap bm, Rect faceRect) {
 		this.bm = bm;
@@ -45,13 +47,15 @@ public class CapturedPreviewFragment extends Fragment {
 	                         Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.fragment_capture, container, false);
 
-		ImageView iv = (ImageView) rootView.findViewById(R.id.image);
-		iv.setImageBitmap(bm);
+		mImageView = (ImageView) rootView.findViewById(R.id.image);
+		mImageView.setImageBitmap(bm);
 
-		mOverlay = new TextPreviewOverlay(getActivity(),faceRect);
+		mTextOverlay = new TextDragLayout(getActivity());
+		mMemeOverlay = new MemeOverlay(getActivity(), faceRect);
 
-		FrameLayout frame = (FrameLayout) rootView.findViewById(R.id.text_overlay);
-		frame.addView(mOverlay);
+		mOverlayFrame = (FrameLayout) rootView.findViewById(R.id.text_overlay);
+		mOverlayFrame.addView(mMemeOverlay);
+		mOverlayFrame.addView(mTextOverlay);
 
 
 		Button captureButton = (Button) rootView.findViewById(R.id.button_capture);
@@ -65,6 +69,19 @@ public class CapturedPreviewFragment extends Fragment {
 		);
 
 
+		Random rnd = new Random();
+		for (String str : text) {
+			TextView tv = new TextView(getActivity());
+			tv.setTextSize(32);
+			tv.setText(str);
+			tv.setTextColor(Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256)));
+			tv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+					ViewGroup.LayoutParams.WRAP_CONTENT));
+
+			blurbs.add(tv);
+			mTextOverlay.addView(tv);
+		}
+
 		return rootView;
 	}
 
@@ -76,7 +93,6 @@ public class CapturedPreviewFragment extends Fragment {
 		intent.setType("image/jpg");
 
 
-
 		Uri uri = storeImage(compositeBitmap(bm));
 
 		intent.putExtra(Intent.EXTRA_STREAM, uri);
@@ -85,20 +101,19 @@ public class CapturedPreviewFragment extends Fragment {
 	}
 
 	private Uri storeImage(Bitmap bm) {
-		FileOutputStream fileOutputStream = null;
 		File file = getOutputMediaFile(MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE);
 		try {
-			fileOutputStream = new FileOutputStream(file);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream);
-		bm.compress(Bitmap.CompressFormat.JPEG, 80, bos);
-		try {
+			FileOutputStream fileOutputStream = new FileOutputStream(file);
+
+			BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream);
+			bm.compress(Bitmap.CompressFormat.JPEG, 80, bos);
+
 			bos.flush();
 			bos.close();
 			fileOutputStream.flush();
 			fileOutputStream.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -144,11 +159,15 @@ public class CapturedPreviewFragment extends Fragment {
 	private Bitmap compositeBitmap(Bitmap bm) {
 		Bitmap mutable = Bitmap.createBitmap(bm.getWidth(), bm.getHeight(), bm.getConfig());
 		Canvas canvas = new Canvas(mutable);
-
 		canvas.drawBitmap(bm, new Matrix(), null);
 
-		mOverlay.overlayOnCanvas(canvas,true);
+		Matrix matrix = new Matrix();
+		matrix.postScale(canvas.getWidth() / (float) mImageView.getWidth(), canvas.getHeight() / (float) mImageView
+				.getHeight());
+		canvas.setMatrix(matrix);
 
+		mMemeOverlay.draw(canvas);
+		mTextOverlay.draw(canvas);
 		return mutable;
 	}
 }

@@ -9,7 +9,7 @@ import android.view.View;
 /**
  * Created by alex on 11/16/13.
  */
-public class CameraPreviewOverlay extends View implements Camera.FaceDetectionListener {
+public class MemeOverlay extends View implements Camera.FaceDetectionListener {
 
 	private static final String TAG = "Overlay";
 	private final Bitmap doge;
@@ -19,32 +19,21 @@ public class CameraPreviewOverlay extends View implements Camera.FaceDetectionLi
 	private Matrix faceConvertMatrix = new Matrix();
 	private int orientation = 0;
 
-	public CameraPreviewOverlay(Context context) {
+	public MemeOverlay(Context context) {
 		super(context);
 		doge = BitmapFactory.decodeResource(getResources(), R.drawable.doge);
+	}
+
+	public MemeOverlay(Context context, Rect faceRect) {
+		this(context);
+		this.faceViewRect = faceRect;
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
 
-		overlayOnCanvas(canvas,false);
-	}
-
-	public void overlayOnCanvas(Canvas canvas, boolean adjustToCanvas) {
-
-
-//		if (faceDriverRectF != null) {
-//			if(adjustToCanvas) {
-//				Matrix matrix = new Matrix();
-//				matrix.postScale(canvas.getWidth() / (float)getWidth(), canvas.getHeight() / (float)getHeight());
-//				//matrix.postTranslate(canvas.getWidth() / 2f, canvas.getHeight() / 2f);
-//				faceDriverRectF = new RectF(faceViewRect);
-//				matrix.mapRect(faceViewRectF,faceDriverRectF);
-//				faceViewRectF.round(faceViewRect);
-//			}
-			canvas.drawBitmap(doge,null,faceViewRect,null);
-//		}
+		canvas.drawBitmap(doge, null, faceViewRect, null);
 	}
 
 	@Override

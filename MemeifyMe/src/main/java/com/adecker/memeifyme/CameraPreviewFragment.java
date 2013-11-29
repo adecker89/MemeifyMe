@@ -2,7 +2,10 @@ package com.adecker.memeifyme;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.graphics.*;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,10 +21,9 @@ import java.util.List;
 public class CameraPreviewFragment extends Fragment {
 
 	private static final String TAG = "Fragment";
-	private static final int PICTURE_RESULT = 12;
 	private Camera mCamera;
 	private CameraPreview mPreview;
-	private CameraPreviewOverlay mOverlay;
+	private MemeOverlay mOverlay;
 	private Camera.PictureCallback mPicture = new Camera.PictureCallback() {
 
 		@Override
@@ -80,7 +82,7 @@ public class CameraPreviewFragment extends Fragment {
 		mCamera.setDisplayOrientation(degrees);
 		Log.i(TAG, "max faces: " + mCamera.getParameters().getMaxNumDetectedFaces());
 
-		mOverlay = new CameraPreviewOverlay(getActivity());
+		mOverlay = new MemeOverlay(getActivity());
 		mOverlay.setOrientation(degrees);
 		mCamera.setFaceDetectionListener(mOverlay);
 		mPreview = new CameraPreview(getActivity(), mCamera);
@@ -172,17 +174,5 @@ public class CameraPreviewFragment extends Fragment {
 
 		parameters.setPictureSize(max.width,max.height);
 		mCamera.setParameters(parameters);
-	}
-
-
-	private Bitmap compositeBitmap(Bitmap bm) {
-		Bitmap mutable = Bitmap.createBitmap(bm.getWidth(), bm.getHeight(), bm.getConfig());
-		Canvas canvas = new Canvas(mutable);
-
-		canvas.drawBitmap(bm, new Matrix(), null);
-
-		mOverlay.overlayOnCanvas(canvas, true);
-
-		return mutable;
 	}
 }
